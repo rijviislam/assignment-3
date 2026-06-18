@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  admin
+  customer
+}
+
+enum VehicleType {
+  car
+  bike
+  truck
+}
+
+enum VehicleAvailability {
+  available
+  rented
+  maintenance
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  email     String    @unique @db.VarChar(150)
+  password  String    @db.VarChar(255)
+  phone     String?   @db.VarChar(20)
+  role      UserRole  @default(customer)
+  createdAt DateTime  @default(now()) @map("created_at")
+  bookings  Booking[]
+
+  @@map("users")
+}
+
+model Vehicle {
+  id                 Int                 @id @default(autoincrement())
+  name               String              @db.VarChar(100)
+  type               VehicleType
+  model              String?             @db.VarChar(100)
+  registrationNumber String              @unique @map("registration_number") @db.VarChar(50)
+  pricePerDay        Decimal             @map("price_per_day") @db.Decimal(10, 2)
+  availability       VehicleAvailability @default(available)
+  createdAt          DateTime            @default(now()) @map("created_at")
+  bookings           Booking[]
+
+  @@map("vehicles")
+}
+
+model Booking {
+  id        Int           @id @default(autoincrement())
+  userId    Int           @map("user_id")
+  vehicleId Int           @map("vehicle_id")
+  startDate DateTime      @map("start_date") @db.Date
+  endDate   DateTime      @map("end_date") @db.Date
+  totalCost Decimal       @map("total_cost") @db.Decimal(10, 2)
+  status    BookingStatus @default(pending)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
