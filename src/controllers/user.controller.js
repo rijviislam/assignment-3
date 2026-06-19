@@ -1,6 +1,5 @@
 const prisma = require('../utils/prisma');
 
-// GET /api/users  (admin only)
 const getAllUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -13,12 +12,10 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// GET /api/users/:id
 const getUserById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
 
-    // Customers can only view their own profile
     if (req.user.role !== 'admin' && req.user.id !== id) {
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }
@@ -36,7 +33,6 @@ const getUserById = async (req, res) => {
   }
 };
 
-// PATCH /api/users/:id
 const updateUser = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -60,7 +56,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-// DELETE /api/users/:id  (admin only)
 const deleteUser = async (req, res) => {
   try {
     const id = parseInt(req.params.id);

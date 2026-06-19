@@ -1,7 +1,5 @@
 const prisma = require('../utils/prisma');
 
-// GET /api/vehicles
-// Query params: type, availability
 const getAllVehicles = async (req, res) => {
   try {
     const { type, availability } = req.query;
@@ -21,10 +19,8 @@ const getAllVehicles = async (req, res) => {
   }
 };
 
-// GET /api/vehicles/never-booked
 const getNeverBookedVehicles = async (req, res) => {
   try {
-    // Uses NOT EXISTS logic via Prisma
     const vehicles = await prisma.vehicle.findMany({
       where: {
         bookings: { none: {} },
@@ -38,10 +34,8 @@ const getNeverBookedVehicles = async (req, res) => {
   }
 };
 
-// GET /api/vehicles/most-booked
 const getMostBookedVehicles = async (req, res) => {
   try {
-    // GROUP BY vehicle, HAVING COUNT > 2
     const result = await prisma.vehicle.findMany({
       where: {
         bookings: { some: {} },
@@ -71,7 +65,6 @@ const getMostBookedVehicles = async (req, res) => {
   }
 };
 
-// GET /api/vehicles/:id
 const getVehicleById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -85,7 +78,6 @@ const getVehicleById = async (req, res) => {
   }
 };
 
-// POST /api/vehicles  (admin only)
 const createVehicle = async (req, res) => {
   try {
     const { name, type, model, registrationNumber, pricePerDay, availability } = req.body;
@@ -105,7 +97,6 @@ const createVehicle = async (req, res) => {
   }
 };
 
-// PATCH /api/vehicles/:id  (admin only)
 const updateVehicle = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -131,7 +122,6 @@ const updateVehicle = async (req, res) => {
   }
 };
 
-// DELETE /api/vehicles/:id  (admin only)
 const deleteVehicle = async (req, res) => {
   try {
     const id = parseInt(req.params.id);

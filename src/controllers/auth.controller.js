@@ -2,7 +2,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../utils/prisma');
 
-// POST /api/auth/register
 const register = async (req, res) => {
   try {
     const { name, email, password, phone, role } = req.body;
@@ -37,7 +36,6 @@ const register = async (req, res) => {
   }
 };
 
-// POST /api/auth/login
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -66,7 +64,6 @@ const login = async (req, res) => {
   }
 };
 
-// GET /api/auth/me
 const getMe = async (req, res) => {
   const { password: _, ...user } = req.user;
   return res.status(200).json({ success: true, data: user });

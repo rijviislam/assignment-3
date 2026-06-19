@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../utils/prisma');
 
-// Verify JWT token
 const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -25,7 +24,6 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-// Allow only admins
 const adminOnly = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ success: false, message: 'Access denied. Admins only.' });

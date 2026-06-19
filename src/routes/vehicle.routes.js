@@ -13,9 +13,9 @@ const { authenticate, adminOnly } = require('../middlewares/auth.middleware');
 const router = express.Router();
 
 // Public routes
-router.get('/', getAllVehicles);                          // ?type=car&availability=available
-router.get('/never-booked', getNeverBookedVehicles);     // Query 2: NOT EXISTS
-router.get('/most-booked', getMostBookedVehicles);       // Query 4: GROUP BY HAVING
+router.get('/', getAllVehicles);                         
+router.get('/never-booked', getNeverBookedVehicles);    
+router.get('/most-booked', getMostBookedVehicles);       
 router.get('/:id', getVehicleById);
 
 // Admin only

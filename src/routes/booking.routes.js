@@ -10,9 +10,9 @@ const { authenticate, adminOnly } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
-router.get('/', authenticate, getAllBookings);                         // admin: all | customer: own
+router.get('/', authenticate, getAllBookings);                         
 router.get('/:id', authenticate, getBookingById);
-router.post('/', authenticate, createBooking);                        // any logged-in user
+router.post('/', authenticate, createBooking);                        
 router.patch('/:id/status', authenticate, adminOnly, updateBookingStatus);
 router.delete('/:id', authenticate, adminOnly, deleteBooking);
 
