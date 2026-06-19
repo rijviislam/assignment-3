@@ -1,238 +1,184 @@
-# 🚗 Vehicle Rental System API
+-- ============================================================
+--  Vehicle Rental System — SQL Queries with Solutions
+-- ============================================================
 
-A RESTful API built with **Node.js**, **Express**, **Prisma ORM**, and **PostgreSQL**.
 
----
+-- ============================================================
+--  SAMPLE DATA
+-- ============================================================
 
-## Tech Stack
+INSERT INTO users (id, name, email, phone, role) VALUES
+  (1, 'Alice',   'alice@example.com',   '1234567890', 'customer'),
+  (2, 'Bob',     'bob@example.com',     '0987654321', 'admin'),
+  (3, 'Charlie', 'charlie@example.com', '1122334455', 'customer');
 
-| Layer       | Technology              |
-|-------------|-------------------------|
-| Runtime     | Node.js                 |
-| Framework   | Express.js              |
-| ORM         | Prisma                  |
-| Database    | PostgreSQL               |
-| Auth        | JWT + bcryptjs          |
+INSERT INTO vehicles (id, name, type, model, registration_number, price_per_day, availability) VALUES
+  (1, 'Toyota Corolla', 'car',   '2022', 'ABC-123', 50,  'available'),
+  (2, 'Honda Civic',    'car',   '2021', 'DEF-456', 60,  'rented'),
+  (3, 'Yamaha R15',     'bike',  '2023', 'GHI-789', 30,  'available'),
+  (4, 'Ford F-150',     'truck', '2020', 'JKL-012', 100, 'maintenance');
 
----
+INSERT INTO bookings (id, user_id, vehicle_id, start_date, end_date, status, total_cost) VALUES
+  (1, 1, 2, '2023-10-01', '2023-10-05', 'completed', 240),
+  (2, 1, 2, '2023-11-01', '2023-11-03', 'completed', 120),
+  (3, 3, 2, '2023-12-01', '2023-12-02', 'confirmed', 60),
+  (4, 1, 1, '2023-12-10', '2023-12-12', 'pending',   100);
 
-## Project Structure
 
-```
-vehicle-rental/
-├── prisma/
-│   ├── schema.prisma       # Database schema & models
-│   └── seed.js             # Sample data seeder
-├── src/
-│   ├── controllers/
-│   │   ├── auth.controller.js
-│   │   ├── user.controller.js
-│   │   ├── vehicle.controller.js
-│   │   └── booking.controller.js
-│   ├── middlewares/
-│   │   └── auth.middleware.js  # JWT auth + role guard
-│   ├── routes/
-│   │   ├── auth.routes.js
-│   │   ├── user.routes.js
-│   │   ├── vehicle.routes.js
-│   │   └── booking.routes.js
-│   └── utils/
-│       └── prisma.js           # Prisma client singleton
-├── index.js                # App entry point
-├── .env.example            # Environment variables template
-└── package.json
-```
+-- ============================================================
+--  QUERY 1: INNER JOIN
+--  Retrieve booking information along with customer name
+--  and vehicle name.
+-- ============================================================
+--
+--  Explanation:
+--  The bookings table stores only user_id and vehicle_id
+--  (foreign keys). To get the actual customer name and
+--  vehicle name, we JOIN the users and vehicles tables.
+--
+--  INNER JOIN returns only rows where a match exists
+--  in ALL joined tables.
+--
+--  Expected Output:
+--  | booking_id | customer_name | vehicle_name   | start_date | end_date   | status    |
+--  |------------|---------------|----------------|------------|------------|-----------|
+--  | 1          | Alice         | Honda Civic    | 2023-10-01 | 2023-10-05 | completed |
+--  | 2          | Alice         | Honda Civic    | 2023-11-01 | 2023-11-03 | completed |
+--  | 3          | Charlie       | Honda Civic    | 2023-12-01 | 2023-12-02 | confirmed |
+--  | 4          | Alice         | Toyota Corolla | 2023-12-10 | 2023-12-12 | pending   |
+-- ============================================================
 
----
+SELECT
+    b.id         AS booking_id,
+    u.name       AS customer_name,
+    v.name       AS vehicle_name,
+    b.start_date,
+    b.end_date,
+    b.status
+FROM bookings b
+INNER JOIN users    u ON b.user_id    = u.id
+INNER JOIN vehicles v ON b.vehicle_id = v.id
+ORDER BY b.id;
 
-## Setup & Installation
 
-### 1. Clone and install dependencies
+-- ============================================================
+--  QUERY 2: NOT EXISTS
+--  Find all vehicles that have never been booked.
+-- ============================================================
+--
+--  Explanation:
+--  For each vehicle, the subquery checks if any booking
+--  exists with that vehicle_id.
+--  NOT EXISTS = TRUE when NO booking is found → vehicle
+--  is included in the result.
+--
+--  SELECT 1 is used because we only care about existence,
+--  not the actual data returned.
+--
+--  From sample data:
+--  → vehicle 1 (Toyota Corolla) → has booking 4    → SKIP
+--  → vehicle 2 (Honda Civic)    → has bookings 1,2,3 → SKIP
+--  → vehicle 3 (Yamaha R15)     → no bookings      → INCLUDE ✓
+--  → vehicle 4 (Ford F-150)     → no bookings      → INCLUDE ✓
+--
+--  Expected Output:
+--  | vehicle_id | name       | type  | model | registration_number | rental_price | status      |
+--  |------------|------------|-------|-------|---------------------|--------------|-------------|
+--  | 3          | Yamaha R15 | bike  | 2023  | GHI-789             | 30           | available   |
+--  | 4          | Ford F-150 | truck | 2020  | JKL-012             | 100          | maintenance |
+-- ============================================================
 
-```bash
-git clone <your-repo-url>
-cd vehicle-rental
-npm install
-```
+SELECT
+    v.id                  AS vehicle_id,
+    v.name,
+    v.type,
+    v.model,
+    v.registration_number,
+    v.price_per_day       AS rental_price,
+    v.availability        AS status
+FROM vehicles v
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM bookings b
+    WHERE b.vehicle_id = v.id
+)
+ORDER BY v.id;
 
-### 2. Configure environment variables
 
-```bash
-cp .env.example .env
-```
+-- ============================================================
+--  QUERY 3: WHERE
+--  Retrieve all available vehicles of a specific type
+--  (cars in this example).
+-- ============================================================
+--
+--  Explanation:
+--  WHERE filters rows before returning results.
+--  Two conditions combined with AND:
+--    1. availability = 'available' → only rentable vehicles
+--    2. type = 'car'               → only cars
+--
+--  From sample data:
+--  → vehicle 1 (Toyota Corolla) → car + available    → INCLUDE ✓
+--  → vehicle 2 (Honda Civic)    → car + rented        → SKIP
+--  → vehicle 3 (Yamaha R15)     → bike + available    → SKIP (wrong type)
+--  → vehicle 4 (Ford F-150)     → truck + maintenance → SKIP
+--
+--  Expected Output:
+--  | vehicle_id | name           | type | model | registration_number | rental_price | status    |
+--  |------------|----------------|------|-------|---------------------|--------------|-----------|
+--  | 1          | Toyota Corolla | car  | 2022  | ABC-123             | 50           | available |
+-- ============================================================
 
-Edit `.env`:
+SELECT
+    v.id                  AS vehicle_id,
+    v.name,
+    v.type,
+    v.model,
+    v.registration_number,
+    v.price_per_day       AS rental_price,
+    v.availability        AS status
+FROM vehicles v
+WHERE v.availability = 'available'
+  AND v.type = 'car'
+ORDER BY v.price_per_day;
 
-```env
-DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/vehicle_rental"
-JWT_SECRET="your-super-secret-jwt-key"
-PORT=5000
-```
 
-### 3. Push schema to database
+-- ============================================================
+--  QUERY 4: GROUP BY and HAVING
+--  Find total bookings per vehicle, show only those
+--  with MORE than 2 bookings.
+-- ============================================================
+--
+--  Explanation:
+--  GROUP BY groups all booking rows by vehicle.
+--  COUNT(b.id) counts total bookings per vehicle.
+--
+--  KEY DIFFERENCE — WHERE vs HAVING:
+--  → WHERE  filters rows BEFORE grouping
+--  → HAVING filters groups AFTER grouping
+--  We must use HAVING here because COUNT is calculated
+--  AFTER the GROUP BY — WHERE cannot filter aggregates.
+--
+--  Step by step with sample data:
+--  Step 1: JOIN vehicles with bookings
+--  Step 2: GROUP BY vehicle:
+--          Toyota Corolla → 1 booking  (booking 4)
+--          Honda Civic    → 3 bookings (bookings 1, 2, 3)
+--  Step 3: HAVING COUNT > 2:
+--          Toyota Corolla → 1 > 2? NO  → SKIP
+--          Honda Civic    → 3 > 2? YES → INCLUDE ✓
+--
+--  Expected Output:
+--  | vehicle_name | total_bookings |
+--  |--------------|----------------|
+--  | Honda Civic  | 3              |
+-- ============================================================
 
-```bash
-npm run db:generate   # Generate Prisma client
-npm run db:push       # Create tables in PostgreSQL
-```
-
-### 4. Seed sample data
-
-```bash
-npm run db:seed
-```
-
-This creates:
-- **Admin:** `admin@rental.com` / `password123`
-- **Customers:** `alice@example.com`, `bob@example.com`, etc. / `password123`
-- 7 vehicles + 7 bookings
-
-### 5. Start the server
-
-```bash
-npm run dev     # Development (nodemon, auto-restart)
-npm start       # Production
-```
-
-Server runs at `http://localhost:5000`
-
----
-
-## API Endpoints
-
-### Authentication — `/api/auth`
-
-| Method | Endpoint           | Access  | Description        |
-|--------|--------------------|---------|--------------------|
-| POST   | `/api/auth/register` | Public | Register a new user |
-| POST   | `/api/auth/login`    | Public | Login & get JWT    |
-| GET    | `/api/auth/me`       | Auth   | Get current user   |
-
-**Register body:**
-```json
-{
-  "name": "Alice Rahman",
-  "email": "alice@example.com",
-  "password": "password123",
-  "phone": "01711000001",
-  "role": "customer"
-}
-```
-
-**Login body:**
-```json
-{
-  "email": "alice@example.com",
-  "password": "password123"
-}
-```
-
-**Response includes a JWT token** — use it in the `Authorization` header:
-```
-Authorization: Bearer <token>
-```
-
----
-
-### Users — `/api/users`
-
-| Method | Endpoint         | Access         | Description       |
-|--------|------------------|----------------|-------------------|
-| GET    | `/api/users`     | Admin only     | Get all users     |
-| GET    | `/api/users/:id` | Auth (own/admin) | Get user by ID   |
-| PATCH  | `/api/users/:id` | Auth (own/admin) | Update name/phone |
-| DELETE | `/api/users/:id` | Admin only     | Delete user       |
-
----
-
-### Vehicles — `/api/vehicles`
-
-| Method | Endpoint                       | Access     | Description                         |
-|--------|--------------------------------|------------|-------------------------------------|
-| GET    | `/api/vehicles`                | Public     | Get all vehicles (filterable)       |
-| GET    | `/api/vehicles?type=car`       | Public     | Filter by type (Query 3: WHERE)     |
-| GET    | `/api/vehicles?availability=available` | Public | Filter by availability        |
-| GET    | `/api/vehicles/never-booked`   | Public     | Vehicles never booked (Query 2: NOT EXISTS) |
-| GET    | `/api/vehicles/most-booked`    | Public     | Vehicles with >2 bookings (Query 4: GROUP BY HAVING) |
-| GET    | `/api/vehicles/:id`            | Public     | Get vehicle by ID                   |
-| POST   | `/api/vehicles`                | Admin only | Create vehicle                      |
-| PATCH  | `/api/vehicles/:id`            | Admin only | Update vehicle                      |
-| DELETE | `/api/vehicles/:id`            | Admin only | Delete vehicle                      |
-
-**Create vehicle body:**
-```json
-{
-  "name": "Toyota Corolla",
-  "type": "car",
-  "model": "2022",
-  "registrationNumber": "DHK-CA-1001",
-  "pricePerDay": 2500,
-  "availability": "available"
-}
-```
-
----
-
-### Bookings — `/api/bookings`
-
-| Method | Endpoint                      | Access       | Description                        |
-|--------|-------------------------------|--------------|------------------------------------|
-| GET    | `/api/bookings`               | Auth         | Admin: all bookings / Customer: own (Query 1: JOIN) |
-| GET    | `/api/bookings/:id`           | Auth         | Get booking by ID                  |
-| POST   | `/api/bookings`               | Auth         | Create booking (auto cost calc)    |
-| PATCH  | `/api/bookings/:id/status`    | Admin only   | Update booking status              |
-| DELETE | `/api/bookings/:id`           | Admin only   | Delete booking                     |
-
-**Create booking body:**
-```json
-{
-  "vehicleId": 1,
-  "startDate": "2025-08-01",
-  "endDate": "2025-08-05"
-}
-```
-
-> Total cost is **auto-calculated**: `pricePerDay × number of days`
-
-**Update status body:**
-```json
-{
-  "status": "confirmed"
-}
-```
-
-Status values: `pending` → `confirmed` → `completed` | `cancelled`
-
----
-
-## Business Logic
-
-- ✅ Vehicle auto-marked as `rented` on booking creation
-- ✅ Vehicle auto-marked as `available` on booking `cancelled` or `completed`
-- ✅ Date conflict check prevents double-booking same vehicle
-- ✅ Customers can only view/manage their own bookings
-- ✅ Total cost calculated automatically from vehicle price × days
-- ✅ All DB operations that touch multiple tables use **Prisma transactions**
-
----
-
-## Assignment SQL Queries Mapping
-
-| Assignment Query | API Endpoint                    | Concept Used     |
-|------------------|---------------------------------|------------------|
-| Query 1 (JOIN)   | `GET /api/bookings`             | INNER JOIN users + vehicles |
-| Query 2 (EXISTS) | `GET /api/vehicles/never-booked`| NOT EXISTS       |
-| Query 3 (WHERE)  | `GET /api/vehicles?type=car&availability=available` | WHERE |
-| Query 4 (GROUP BY HAVING) | `GET /api/vehicles/most-booked` | GROUP BY + HAVING COUNT > 2 |
-
----
-
-## Useful Commands
-
-```bash
-npm run dev           # Start dev server
-npm run db:push       # Sync schema to DB
-npm run db:seed       # Seed sample data
-npm run db:studio     # Open Prisma Studio (visual DB browser)
-npm run db:generate   # Regenerate Prisma client after schema change
-```
+SELECT
+    v.name       AS vehicle_name,
+    COUNT(b.id)  AS total_bookings
+FROM vehicles v
+INNER JOIN bookings b ON b.vehicle_id = v.id
+GROUP BY v.id, v.name
+HAVING COUNT(b.id) > 2
+ORDER BY total_bookings DESC;
