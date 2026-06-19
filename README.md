@@ -286,14 +286,47 @@ Returns all users, even if they have no bookings.
 
 ---
 
-# How to Run
+## How to Run the Project
 
-unzip vehicle-rental-api.zip && cd vehicle-rental
+Follow these steps to set up and run the project locally:
+
+### 1. Unzip the project
+```bash
+unzip vehicle-rental-api.zip
+cd vehicle-rental
+```
+
+### 2. Install dependencies
+```bash
 npm install
-cp .env.example .env       # fill in your DB credentials
-npm run db:push            # create tables
-npm run db:seed            # load sample data
-npm run dev                # start on :5000
+```
+
+### 3. Setup environment variables
+```bash
+cp .env.example .env
+```
+
+Then open `.env` file and add your database credentials.
+
+### 4. Push database schema
+```bash
+npm run db:push
+```
+
+### 5. Seed the database (sample data)
+```bash
+npm run db:seed
+```
+
+### 6. Start the development server
+```bash
+npm run dev
+```
+
+### 7. Server will run on
+```
+http://localhost:5000
+```
 
 ---
 
