@@ -288,11 +288,12 @@ Returns all users, even if they have no bookings.
 
 # How to Run
 
-1. Create the database.
-2. Create the required tables.
-3. Insert the sample data.
-4. Run the queries from the `queries.sql` file.
-5. Verify the output against the expected results.
+unzip vehicle-rental-api.zip && cd vehicle-rental
+npm install
+cp .env.example .env       # fill in your DB credentials
+npm run db:push            # create tables
+npm run db:seed            # load sample data
+npm run dev                # start on :5000
 
 ---
 
