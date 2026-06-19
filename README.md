@@ -1,79 +1,80 @@
-# Vehicle Rental System — SQL Queries with Solutions
+# Vehicle Rental System Database Assignment
 
-This document contains SQL queries along with explanations and expected outputs for the Vehicle Rental System database.
+## Project Overview
+
+The Vehicle Rental System is a relational database project designed to manage vehicle rentals efficiently. The database stores information about users, vehicles, and bookings while maintaining relationships between tables through primary and foreign keys.
+
+This assignment demonstrates the use of:
+
+* Primary Keys
+* Foreign Keys
+* INNER JOIN
+* LEFT JOIN
+* WHERE Clause
+* GROUP BY
+* HAVING Clause
+* NOT EXISTS
+* Relational Database Concepts
 
 ---
 
-# Sample Data
+# Database Tables
 
 ## Users
 
-```sql
-INSERT INTO users (id, name, email, phone, role)
-VALUES
-(1, 'Alice', 'alice@example.com', '1234567890', 'customer'),
-(2, 'Bob', 'bob@example.com', '0987654321', 'admin'),
-(3, 'Charlie', 'charlie@example.com', '1122334455', 'customer');
-```
+Stores customer and admin information.
 
-## Vehicles
-
-```sql
-INSERT INTO vehicles (
-    id,
-    name,
-    type,
-    model,
-    registration_number,
-    price_per_day,
-    availability
-)
-VALUES
-(1, 'Toyota Corolla', 'car', '2022', 'ABC-123', 50, 'available'),
-(2, 'Honda Civic', 'car', '2021', 'DEF-456', 60, 'rented'),
-(3, 'Yamaha R15', 'bike', '2023', 'GHI-789', 30, 'available'),
-(4, 'Ford F-150', 'truck', '2020', 'JKL-012', 100, 'maintenance');
-```
-
-## Bookings
-
-```sql
-INSERT INTO bookings (
-    id,
-    user_id,
-    vehicle_id,
-    start_date,
-    end_date,
-    status,
-    total_cost
-)
-VALUES
-(1, 1, 2, '2023-10-01', '2023-10-05', 'completed', 240),
-(2, 1, 2, '2023-11-01', '2023-11-03', 'completed', 120),
-(3, 3, 2, '2023-12-01', '2023-12-02', 'confirmed', 60),
-(4, 1, 1, '2023-12-10', '2023-12-12', 'pending', 100);
-```
+| Column | Description            |
+| ------ | ---------------------- |
+| id     | Unique user identifier |
+| name   | User name              |
+| email  | User email             |
+| phone  | User phone number      |
+| role   | Customer or Admin      |
 
 ---
 
-# Query 1: INNER JOIN
+## Vehicles
 
-## Objective
+Stores vehicle information.
 
-Retrieve booking information along with customer name and vehicle name.
+| Column              | Description               |
+| ------------------- | ------------------------- |
+| id                  | Unique vehicle identifier |
+| name                | Vehicle name              |
+| type                | Vehicle type              |
+| model               | Vehicle model             |
+| registration_number | Registration number       |
+| price_per_day       | Daily rental price        |
+| availability        | Vehicle status            |
 
-## Explanation
+---
 
-The `bookings` table stores only foreign keys (`user_id` and `vehicle_id`).
+## Bookings
 
-To display the customer name and vehicle name, we join:
+Stores rental booking information.
 
-* `bookings` → `users`
-* `bookings` → `vehicles`
+| Column     | Description                 |
+| ---------- | --------------------------- |
+| id         | Booking ID                  |
+| user_id    | Reference to Users table    |
+| vehicle_id | Reference to Vehicles table |
+| start_date | Rental start date           |
+| end_date   | Rental end date             |
+| status     | Booking status              |
+| total_cost | Total rental cost           |
 
-`INNER JOIN` returns only rows where matching records exist in all tables.
+---
 
-## SQL Query
+# SQL Queries and Solutions
+
+## Query 1: INNER JOIN
+
+### Objective
+
+Retrieve booking information together with customer names and vehicle names.
+
+### SQL
 
 ```sql
 SELECT
@@ -91,32 +92,21 @@ INNER JOIN vehicles v
 ORDER BY b.id;
 ```
 
-## Expected Output
+### Explanation
 
-| booking_id | customer_name | vehicle_name   | start_date | end_date   | status    |
-| ---------- | ------------- | -------------- | ---------- | ---------- | --------- |
-| 1          | Alice         | Honda Civic    | 2023-10-01 | 2023-10-05 | completed |
-| 2          | Alice         | Honda Civic    | 2023-11-01 | 2023-11-03 | completed |
-| 3          | Charlie       | Honda Civic    | 2023-12-01 | 2023-12-02 | confirmed |
-| 4          | Alice         | Toyota Corolla | 2023-12-10 | 2023-12-12 | pending   |
+The bookings table contains only foreign key references (`user_id` and `vehicle_id`).
+
+Using INNER JOIN allows us to retrieve the actual customer and vehicle information from the related tables.
 
 ---
 
-# Query 2: NOT EXISTS
+## Query 2: NOT EXISTS
 
-## Objective
+### Objective
 
-Find all vehicles that have never been booked.
+Find vehicles that have never been booked.
 
-## Explanation
-
-For each vehicle, the subquery checks whether any booking exists.
-
-`NOT EXISTS` returns TRUE only when no matching booking is found.
-
-`SELECT 1` is used because we only need to check existence.
-
-## SQL Query
+### SQL
 
 ```sql
 SELECT
@@ -136,31 +126,21 @@ WHERE NOT EXISTS (
 ORDER BY v.id;
 ```
 
-## Expected Output
+### Explanation
 
-| vehicle_id | name       | type  | model | registration_number | rental_price | status      |
-| ---------- | ---------- | ----- | ----- | ------------------- | ------------ | ----------- |
-| 3          | Yamaha R15 | bike  | 2023  | GHI-789             | 30           | available   |
-| 4          | Ford F-150 | truck | 2020  | JKL-012             | 100          | maintenance |
+The subquery checks whether a booking exists for a vehicle.
+
+If no booking exists, NOT EXISTS returns TRUE and the vehicle is included in the result.
 
 ---
 
-# Query 3: WHERE Clause
+## Query 3: WHERE Clause
 
-## Objective
+### Objective
 
-Retrieve all available vehicles of type **car**.
+Retrieve all available cars.
 
-## Explanation
-
-The `WHERE` clause filters rows before they are returned.
-
-Conditions:
-
-1. Vehicle must be available.
-2. Vehicle type must be car.
-
-## SQL Query
+### SQL
 
 ```sql
 SELECT
@@ -177,49 +157,26 @@ WHERE v.availability = 'available'
 ORDER BY v.price_per_day;
 ```
 
-## Expected Output
+### Explanation
 
-| vehicle_id | name           | type | model | registration_number | rental_price | status    |
-| ---------- | -------------- | ---- | ----- | ------------------- | ------------ | --------- |
-| 1          | Toyota Corolla | car  | 2022  | ABC-123             | 50           | available |
+The WHERE clause filters rows before returning results.
+
+Only vehicles that are:
+
+* Available
+* Type = Car
+
+are returned.
 
 ---
 
-# Query 4: GROUP BY and HAVING
+## Query 4: GROUP BY and HAVING
 
-## Objective
+### Objective
 
-Find total bookings per vehicle and show only vehicles with more than 2 bookings.
+Find vehicles with more than two bookings.
 
-## Explanation
-
-`GROUP BY` groups bookings by vehicle.
-
-`COUNT()` calculates total bookings for each vehicle.
-
-### Difference Between WHERE and HAVING
-
-* `WHERE` filters rows before grouping.
-* `HAVING` filters groups after aggregation.
-
-Since `COUNT()` is an aggregate function, we must use `HAVING`.
-
-### Sample Calculation
-
-| Vehicle        | Total Bookings |
-| -------------- | -------------- |
-| Toyota Corolla | 1              |
-| Honda Civic    | 3              |
-
-Applying:
-
-```sql
-HAVING COUNT(b.id) > 2
-```
-
-Returns only Honda Civic.
-
-## SQL Query
+### SQL
 
 ```sql
 SELECT
@@ -233,22 +190,112 @@ HAVING COUNT(b.id) > 2
 ORDER BY total_bookings DESC;
 ```
 
-## Expected Output
+### Explanation
 
-| vehicle_name | total_bookings |
-| ------------ | -------------- |
-| Honda Civic  | 3              |
+GROUP BY groups bookings by vehicle.
+
+COUNT() calculates the number of bookings for each vehicle.
+
+HAVING filters grouped results and returns only vehicles with more than two bookings.
 
 ---
 
-# Summary
+# Theory Questions and Answers
 
-This document demonstrates:
+## Question 1
 
-* INNER JOIN
-* NOT EXISTS
-* WHERE Clause
-* GROUP BY
-* HAVING Clause
+### What is a foreign key and why is it important in relational databases?
 
-using the Vehicle Rental System database schema and sample data.
+A foreign key is a column that references the primary key of another table. It creates a relationship between tables and helps maintain data integrity. Foreign keys prevent invalid references and ensure consistency across related tables.
+
+---
+
+## Question 2
+
+### What is the difference between WHERE and HAVING clauses in SQL?
+
+The WHERE clause filters individual rows before grouping takes place.
+
+The HAVING clause filters grouped results after aggregation functions such as COUNT(), SUM(), or AVG() are applied.
+
+Example:
+
+```sql
+WHERE status = 'available'
+```
+
+filters rows.
+
+```sql
+HAVING COUNT(*) > 2
+```
+
+filters groups.
+
+---
+
+## Question 3
+
+### What is a primary key and what are its characteristics?
+
+A primary key is a column (or set of columns) that uniquely identifies each row in a table.
+
+Characteristics:
+
+* Must be unique
+* Cannot contain NULL values
+* One primary key per table
+* Ensures entity integrity
+* Used to create relationships with foreign keys
+
+Example:
+
+```sql
+id INT PRIMARY KEY
+```
+
+---
+
+## Question 4
+
+### What is the difference between INNER JOIN and LEFT JOIN in SQL?
+
+INNER JOIN returns only matching records from both tables.
+
+LEFT JOIN returns all records from the left table and matching records from the right table. If no match exists, NULL values are returned for the right table columns.
+
+Example:
+
+```sql
+SELECT *
+FROM bookings b
+INNER JOIN users u
+ON b.user_id = u.id;
+```
+
+Returns only matching bookings and users.
+
+```sql
+SELECT *
+FROM users u
+LEFT JOIN bookings b
+ON u.id = b.user_id;
+```
+
+Returns all users, even if they have no bookings.
+
+---
+
+# How to Run
+
+1. Create the database.
+2. Create the required tables.
+3. Insert the sample data.
+4. Run the queries from the `queries.sql` file.
+5. Verify the output against the expected results.
+
+---
+
+# Conclusion
+
+This project demonstrates core relational database concepts including table relationships, data filtering, aggregation, and SQL joins. It provides practical examples of how SQL can be used to manage and analyze data within a Vehicle Rental System.
