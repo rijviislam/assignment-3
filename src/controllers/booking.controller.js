@@ -11,13 +11,11 @@ const bookingSelect = {
   vehicle: { select: { id: true, name: true, type: true, registrationNumber: true, pricePerDay: true } },
 };
 
-// Calculate rental days (inclusive)
 const calcDays = (start, end) => {
   const diff = new Date(end) - new Date(start);
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
-// GET /api/bookings  (admin: all | customer: own)
 const getAllBookings = async (req, res) => {
   try {
     const where = req.user.role === 'admin' ? {} : { userId: req.user.id };
@@ -34,7 +32,6 @@ const getAllBookings = async (req, res) => {
   }
 };
 
-// GET /api/bookings/:id
 const getBookingById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -42,7 +39,6 @@ const getBookingById = async (req, res) => {
 
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
 
-    // Customers can only view their own bookings
     if (req.user.role !== 'admin' && booking.user.id !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }
@@ -53,7 +49,6 @@ const getBookingById = async (req, res) => {
   }
 };
 
-// POST /api/bookings
 const createBooking = async (req, res) => {
   try {
     const { vehicleId, startDate, endDate } = req.body;
@@ -69,14 +64,12 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: 'endDate must be after startDate.' });
     }
 
-    // Check vehicle exists and is available
     const vehicle = await prisma.vehicle.findUnique({ where: { id: parseInt(vehicleId) } });
     if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found.' });
     if (vehicle.availability !== 'available') {
       return res.status(400).json({ success: false, message: `Vehicle is currently ${vehicle.availability}.` });
     }
 
-    // Check for date conflicts on this vehicle
     const conflict = await prisma.booking.findFirst({
       where: {
         vehicleId: parseInt(vehicleId),
@@ -89,11 +82,9 @@ const createBooking = async (req, res) => {
       return res.status(409).json({ success: false, message: 'Vehicle is already booked for those dates.' });
     }
 
-    // Auto-calculate total cost
     const days = calcDays(start, end);
     const totalCost = parseFloat(vehicle.pricePerDay) * days;
 
-    // Create booking and mark vehicle as rented in a transaction
     const [booking] = await prisma.$transaction([
       prisma.booking.create({
         data: {
@@ -118,7 +109,6 @@ const createBooking = async (req, res) => {
   }
 };
 
-// PATCH /api/bookings/:id/status  (admin only)
 const updateBookingStatus = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -132,7 +122,6 @@ const updateBookingStatus = async (req, res) => {
     const booking = await prisma.booking.findUnique({ where: { id } });
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
 
-    // If cancelled or completed, free up the vehicle
     let vehicleUpdate = null;
     if (status === 'cancelled' || status === 'completed') {
       vehicleUpdate = prisma.vehicle.update({
@@ -158,7 +147,6 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
-// DELETE /api/bookings/:id  (admin only)
 const deleteBooking = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
